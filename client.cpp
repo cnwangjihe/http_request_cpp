@@ -19,9 +19,10 @@ using namespace std;
 #define ERROR_INTERNET_REQ    15
 #define ERROR_INTERNET_SEND   16
 
-const string IP("192.168.253.78"),
-			 url("/api.php"),
+const string IP("127.0.0.1"),
+			 url("/tmp/api.php"),
 			 boundary("--blockchaintest19260817");
+const int port = 80;
 
 string basic_header, header, contentend, field[3];
 struct hostent *host;
@@ -76,7 +77,7 @@ string MakeRequest(string request)
 
 	Socket=socket(AF_INET, SOCK_STREAM,IPPROTO_TCP);
 
-	SockAddr.sin_port=htons(80);
+	SockAddr.sin_port=htons(port);
 	SockAddr.sin_family=AF_INET;
 	SockAddr.sin_addr.s_addr = *((unsigned long*)host->h_addr);
 
@@ -87,11 +88,10 @@ string MakeRequest(string request)
 	}
 
 	send(Socket, request.c_str(), strlen(request.c_str()),0 );
-
+	memset(buffer,0,sizeof buffer);
 	while ((recv(Socket, buffer, 10000,0)) > 0)
 		for (int i=0;buffer[i]>=32 || buffer[i]=='\n' || buffer[i]=='\r';i++)
 			data+=buffer[i];
-//	cerr << data << '\n';
 	data.erase(0, data.find("\r\n\r\n")+7);
 	data.erase(data.size()-7, 7);
 	closesocket(Socket);
@@ -115,8 +115,7 @@ void MakePost(int client,int target,string filename)
 	header = "POST "+ url + " HTTP/1.1\r\n" + basic_header + "Content-Length: " + to_string(strlen(content.c_str())) + "\r\n\r\n";
 
 	string request = header + content;
-	cerr << request << '\n';
-	cerr << MakeRequest(request);
+	MakeRequest(request);
 
 	return ;
 
@@ -132,7 +131,7 @@ int GetCount(int client)
 string GetRecord(int client,int pos)
 {
 	header = "GET " + url + "?client=" + to_string(client) + "&pos=" + to_string(pos) + "&type=1 HTTP/1.1\r\n" + basic_header + "\r\n";
-	return MakeRequest(header).c_str();
+	return MakeRequest(header);
 }
 
 void PrintRecord(int client,int pos,string filename)
